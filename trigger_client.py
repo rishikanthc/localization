@@ -23,6 +23,8 @@ def on_message(client, userdata, msg):
         loc_start()
     elif mssg == '2':
         p = subprocess.Popen("python /home/pi/localization/train.py", stdout=subprocess.PIPE, shell=True)
+        p_status = p.wait()
+        print("Training finished", p_status)
 
 def loc_start():
     scanner = BeaconScanner()
