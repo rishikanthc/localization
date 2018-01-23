@@ -1,18 +1,21 @@
 #!/usr/bin/python
 from hcipy import *
 from signal import pause
+import datetime
 import time
 
 # based on: https://github.com/sandeepmistry/node-bluetooth-hci-socket/blob/master/examples/le-scan-test.js
 
 
-class BluetoothLEScanTest:
+class BeaconScanner:
 
     def __init__(self, dev_id=0):
         self.hci = BluetoothHCI(dev_id)
         self.hci.on_data(self.on_data)
         self.avg_rssi = 0.0
         self.count = 0
+        self.rssi_array = []
+        self.set_train = False
         print(self.hci.get_device_info())
         self.found_bd_addrs = set()
 
@@ -33,8 +36,8 @@ class BluetoothLEScanTest:
     def set_scan_parameters(self):
         len = 7
         type = SCAN_TYPE_ACTIVE
-        internal = 0x3135   #  ms * 1.6 old values 0x0010
-        window = 0x0375     #  ms * 1.6 old value 0x0010
+        internal = 0x0010   #  ms * 1.6 old values 0x0010
+        window = 0x0010     #  ms * 1.6 old value 0x0010
         own_addr  = LE_PUBLIC_ADDRESS
         filter = FILTER_POLICY_NO_WHITELIST
         cmd = struct.pack("<BHBBHHBB", HCI_COMMAND_PKT, LE_SET_SCAN_PARAMETERS_CMD, len,
@@ -53,25 +56,9 @@ class BluetoothLEScanTest:
 
     def on_data(self, data):
         if data[0] == HCI_EVENT_PKT:
-            '''print("HCI_EVENT_PKT")
-            if data[1] == EVT_CMD_COMPLETE:
-                print("EVT_CMD_COMPLETE")
-                # TODO: unpack based on: https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/lib/hci.h#n1853
-
-                if (data[5]<<8) + data[4] == LE_SET_SCAN_PARAMETERS_CMD:
-                    if data[6] == HCI_SUCCESS:
-                        print('LE Scan Parameters Set');
-
-                elif data[5]<<8 + data[4] ==  LE_SET_SCAN_ENABLE_CMD:
-                    if data[6] == HCI_SUCCESS:
-                        print('LE Scan Enable Set')
-            '''
             if data[1] == EVT_LE_META_EVENT:
                 #print("EVT_LE_META_EVENT")
                 if data[3] == EVT_LE_ADVERTISING_REPORT:
-
-                    # TODO: unpack based on: https://git.kernel.org/pub/scm/bluetooth/bluez.git/tree/lib/hci.h#n2167
-
                     gap_adv_type =['ADV_IND', 'ADV_DIRECT_IND', 'ADV_SCAN_IND', 'ADV_NONCONN_IND', 'SCAN_RSP'][data[5]]
                     gap_addr_type = ['PUBLIC', 'RANDOM'][data[6]]
                     gap_addr =  [hex(c) for c in data[12:6:-1]]
@@ -90,20 +77,21 @@ class BluetoothLEScanTest:
                         #print('\tEIR       = {}'.format(eir))
                         print('\tRSSI      = {}'.format(rssi))
                         self.avg_rssi += rssi
+                        if self.set_train:
+                            self.rssi_array.append((rssi,datetime.datetime.now().time()))
                         self.count += 1
-
-#while (True):
-print "{0:=^20}".format("new iter")
-ble_scan_test = BluetoothLEScanTest()
-ble_scan_test.set_scan_enable(False)
-ble_scan_test.set_filter()
-ble_scan_test.set_scan_parameters()
-ble_scan_test.set_scan_enable(True)
-print "sleeping"
-time.sleep(20)
-print "finished"
-if 0 != ble_scan_test.count:
-    print ble_scan_test.avg_rssi/ble_scan_test.count
-    print ble_scan_test.count
-else:
-    print 0
+if __name__ == '__main__' :
+    print "{0:=^20}".format("new iter")
+    ble_scan_test = BeaconScanner()
+    ble_scan_test.set_scan_enable(False)
+    ble_scan_test.set_filter()
+    ble_scan_test.set_scan_parameters()
+    ble_scan_test.set_scan_enable(True)
+    print "sleeping"
+    time.sleep(20)
+    print "finished"
+    if 0 != ble_scan_test.count:
+        print ble_scan_test.avg_rssi/ble_scan_test.count
+        print ble_scan_test.count
+    else:
+        print 0
