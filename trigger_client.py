@@ -1,6 +1,6 @@
 import paho.mqtt.client as mqtt
 import os 
-import time
+import subprocess 
 from blebeacon import BeaconScanner
 
 ####global variables #####
@@ -14,12 +14,15 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
     global exit_flag
-    print(msg.topic+" "+str(msg.payload))
-    if str(msg.payload) == '0':
+    mssg = str(msg.payload)
+    print(msg.topic+" "+mssg)
+    if mssg == '0':
         exit_flag = 1
         os._exit(0)
-    elif str(msg.payload) == '1':
+    elif mssg == '1':
         loc_start()
+    elif mssg == '2':
+        p = subprocess.Popen("python /home/pi/localization/train.py", stdout=subprocess.PIPE, shell=True)
 
 def loc_start():
     scanner = BeaconScanner()

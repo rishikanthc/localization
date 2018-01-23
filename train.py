@@ -17,3 +17,4 @@ if __name__ == '__main__':
     f = open(file_name, 'w')
     pickle.dump(ble_scanner.rssi_array, f)
     f.close()
+    exit(0)
