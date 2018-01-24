@@ -1,6 +1,8 @@
 import paho.mqtt.client as mqtt
 import os 
 import subprocess 
+import requests
+import time
 from blebeacon import BeaconScanner
 
 ####global variables #####
@@ -31,7 +33,20 @@ def loc_start():
     scanner.set_scan_enable(False)
     scanner.set_filter()
     scanner.set_scan_parameters()
-    scanner.set_scan_enable(True)
+    scanner.ival = 0x0010
+    scanner.wval = 0x0010
+    while True:
+        scanner.avg_rssi = 0
+        scanner.count = 0
+        scanner.set_scan_enable(True)
+        time.sleep(1)
+        scanner.set_scan_enable(False)
+        if scanner.count:
+            datum = {'val': scanner.avg_rssi / scanner.count}
+            r = requests.post("http://server.local/node3", json=datum)
+            print r.status_code
+        time.sleep(5)
+
 
 if __name__ == '__main__':
     client = mqtt.Client()

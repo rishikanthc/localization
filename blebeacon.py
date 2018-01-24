@@ -15,6 +15,9 @@ class BeaconScanner:
         self.avg_rssi = 0.0
         self.count = 0
         self.rssi_array = []
+        self.ival = 0x3000
+        self.wval = 0x0975
+        self.on_con = 0
         self.set_train = False
         print(self.hci.get_device_info())
         self.found_bd_addrs = set()
@@ -36,8 +39,8 @@ class BeaconScanner:
     def set_scan_parameters(self):
         len = 7
         type = SCAN_TYPE_ACTIVE
-        internal = 0x0010   #  ms * 1.6 old values 0x0010
-        window = 0x0010     #  ms * 1.6 old value 0x0010
+        internal = self.ival #0x0010   #  ms * 1.6 old values 0x0010
+        window = self.wval #0x0010     #  ms * 1.6 old value 0x0010
         own_addr  = LE_PUBLIC_ADDRESS
         filter = FILTER_POLICY_NO_WHITELIST
         cmd = struct.pack("<BHBBHHBB", HCI_COMMAND_PKT, LE_SET_SCAN_PARAMETERS_CMD, len,
@@ -80,16 +83,28 @@ class BeaconScanner:
                         if self.set_train:
                             self.rssi_array.append((rssi,datetime.datetime.now().time()))
                         self.count += 1
+                        if self.count >= 3:
+                            if self.on_con:
+                                datum = {'val': self.avg_rssi/self.count}
+                                r = requests.post('http://serverl.local/node3', json=datum)
+                            self.count = 0
+                            self.avg_rssi = 0
+                            
+
 if __name__ == '__main__' :
     print "{0:=^20}".format("new iter")
     ble_scan_test = BeaconScanner()
     ble_scan_test.set_scan_enable(False)
     ble_scan_test.set_filter()
     ble_scan_test.set_scan_parameters()
-    ble_scan_test.set_scan_enable(True)
-    print "sleeping"
-    time.sleep(20)
-    print "finished"
+    while (True):
+        print "{0:=^20}".format("new iter")
+        ble_scan_test.set_scan_enable(True)
+        print "sleeping"
+        time.sleep(2)
+        ble_scan_test.set_scan_enable(False)
+        time.sleep(4)
+        print "finished"
     if 0 != ble_scan_test.count:
         print ble_scan_test.avg_rssi/ble_scan_test.count
         print ble_scan_test.count
