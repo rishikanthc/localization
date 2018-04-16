@@ -61,7 +61,8 @@ def getResponse(neighbors):
 def hello_world():
     global rssi_1, XY_train
     #XY_train = load_data("/home/pi/localization/X_Y_train.data")
-    XY_train = load_data("/home/pi/localization/new_train.data")
+    #XY_train = load_data("/home/pi/localization/new_train.data")
+    XY_train = load_data("/home/pi/localization/boosted_train.data")
     #XY_train = load_data("/home/pi/localization/new1_train.data")
     return "Values: {} {} {}".format(str(rssi_1), str(rssi_2), str(rssi_3)) 
     #return 'Hello from Flask!'
@@ -74,7 +75,7 @@ def findLocation():
     if rssi_1 == 0 or rssi_2 == 0 or rssi_3 == 0:
         return jsonify({'area':loc_area, 'rssi1':rssi_1, 'rssi2':rssi_1, 'rssi3':rssi_3})
     else:
-        neighbors = getNeighbors(XY_train, (rssi_1, rssi_2, rssi_3), 8)
+        neighbors = getNeighbors(XY_train, (rssi_1, rssi_2, rssi_3), 15)
         loc = getResponse(neighbors)
 
     if loc == 'b':
